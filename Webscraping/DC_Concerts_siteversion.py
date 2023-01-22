@@ -33,36 +33,34 @@ sp = spotipy.Spotify(auth_manager=SpotifyOAuth(cache_path=cache_path))
 
 # helper functions
 # define function to get related genres for an artist
-def getGenres(df):
+def getGenres(row):
     '''
-    input: dataframe
+    input: dataframe column with artist name
     output: column of dataframe with list of artist genres--blank list, full list, or 'na' when there are no results 
     '''
-    if len(df['name']) > 0:
-        q = df['name']
-        results = sp.search(q, type='artist')
+    if len(row) > 0:
+        results = sp.search(row, type='artist')
         try: sp_name = results['artists']['items'][0]['name']
-        except IndexError: sp_name = []
-        if sp_name == df['name']:
+        except IndexError: sp_name = 'none'
+        if sp_name.lower() == row.lower():
             try: genres = results['artists']['items'][0]['genres']
-            except IndexError: genres = []
+            except IndexError: genres = 'none'
             return genres
         else: return 'na'
     else:
         return 'na'
 
 # define function to get similar artists for an artist
-def getArtists(df):
+def getArtists(row):
     '''
-    input: dataframe
+    input: dataframe column with artist name
     output: column of dataframe with list of related artists--blank list, full list, or 'na' when there are no results 
     '''
-    if len(df['name']) > 0:
-        q = df['name']
-        results = sp.search(q, type='artist')
+    if len(row) > 0:
+        results = sp.search(row, type='artist')
         try: sp_name = results['artists']['items'][0]['name']
-        except IndexError: sp_name = []
-        if sp_name == df['name']:
+        except IndexError: sp_name = 'none'
+        if sp_name.lower() == row.lower():
             try: id = results['artists']['items'][0]['id']
             except IndexError: id = 'none'
             if id == 'none':
@@ -354,15 +352,15 @@ def getData(venue):
         
     
     df['venue'] = venue
-    df['genres'] = df.apply(getGenres, axis=1)
-    df['rel_artists'] = df.apply(getArtists, axis=1)
+    df['genres'] = df['name'].apply(getGenres)
+    df['rel_artists'] = df['name'].apply(getArtists)
 
     return df
 
 
 # Run 
-songbyrd_df = getData('Songbyrd')
 dc9_df = getData('DC9')
+songbyrd_df = getData('Songbyrd')
 nine30_df = getData('9:30')
 blackcat_df = getData('Black Cat')
 
@@ -388,11 +386,8 @@ my_preferred_shows = df[ df['indie'] == True]
 cheap_shows = df[ (df['clean_cost'] <= 20) | (df['clean_cost'].isna()) ]
 
 # # filter by multiple conditions; use | for or if needed
-my_preferred_shows = df[ ((df['clean_cost'] <= 20) | (df['clean_cost'].isna())) & ((df['indie'] == True) | (df['alt'] == True) | (df['alternative'] == True))]
+my_preferred_shows = df[ (df['clean_cost'] <= 25) & (df['weekday'] != 'Tue') &((df['indie'] == True) | (df['alt'] == True) | (df['alternative'] == True))]
 
 # export dataframe, shows of interest to .csv 
 df.to_csv('DC_Concerts.csv')
 my_preferred_shows.to_csv('Top_Shows.csv')
-
-
-
